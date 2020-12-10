@@ -4,11 +4,11 @@
 **Vishesh-Gupta/Vishesh-Gupta** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 -->
 
-- 🔭 I’m currently working on [Health-Bridge](https://github.com/healthbr)
-- 🌱 I’m currently learning about finance industry, and infrastructure and architecture engineering
-- 👯 I’m looking to collaborate on new projects that revolve around solving world problems in different industries
-- 🤔 I’m looking for help with learning how to be more minimalistic and learn more things in less time
-- 💬 Ask me about general motivation questions, minimalistic lifestyle, and time management
-- 📫 How to reach me: vishesh.guptaq12@outlook.com
+- 🔭 Currently in the last stretch of my Bachelor's degree at *University of Waterloo*.
+- 🌱 Learning about finance industry, and infrastructure and system designing.
+- 👯 Interested in collaboration on projects that *solve world problems*.
+- 🤔 Seeking guidance with minimalistic lifestyle and better learning
+- 💬 Open to *mentoring* in wide area of computer science concepts
+- 📫 How to reach me: *vishesh.gupta12@outlook.com*
 - 😄 Pronouns: He/Him/His
-- ⚡ Fun fact: Love watching anime. Few of the favorite ones I have are Naruto, One Piece, Sword Art Online. 
+- ⚡ Fun fact: Love watching anime. 
