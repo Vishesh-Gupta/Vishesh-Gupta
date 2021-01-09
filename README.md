@@ -12,3 +12,5 @@
 - 📫 How to reach me: *vishesh.gupta12@outlook.com*
 - 😄 Pronouns: He/Him/His
 - ⚡ Fun fact: Love watching anime. 
+
+![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Vishesh-Gupta&theme=buefy&layout=compact)
