@@ -13,4 +13,4 @@
 - 😄 Pronouns: He/Him/His
 - ⚡ Fun fact: Love watching anime. 
 
-![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Vishesh-Gupta&theme=buefy&layout=compact)
+![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=Vishesh-Gupta&theme=tokyonight&layout=compact)
