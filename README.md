@@ -1,19 +1,17 @@
-### Hey there <img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="25px">
+## Hey! I'm Vishesh, but my friends call me Vish <img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="25px">
 
-<a href="https://www.linkedin.com/in/vishesh-gupta/">
-  <img align="left" alt="Vishesh's LinkedIn" width="22px" src="https://raw.githubusercontent.com/peterthehan/peterthehan/master/assets/linkedin.svg" />
-</a>
+[![LinkedIn Badge]()](https://linkedin.com/in/vishesh-gupta)
+[![Medium Badge]()](https://medium.com/shadow_coder)
+[![Instagram Badge]()](https://instagram.com/shadow_coder)
+[![Outlook Badge]()](mailto:vishesh.gupta12@outlook.com)
 
-![](https://visitor-badge.glitch.me/badge?page_id=vishesh-gupta.vishesh-gupta)
+### About Me
 
-<br />
+I'm a Software Engineer, with a focus on Infrastructure and Site Reliability Engineering. Currently working at @ClearStreet to enhance scalability of modern financial solutions. I enjoy working on complex and challenging problems.
 
-Hi, I'm [Vishesh Gupta](), a computer scientist making infrastructure to face the next level of problems. I am a big anime fan and love to work small project and open source projects
-  
-- 💬 Ask me about anything, I am happy to help;
-- 📫 How to reach me: [@vishesh-gupta](mailto:vishesh.gupta12@outlook.com);
+I am an avid traveller, and have visited 8 countries so far. I know this might sound a lot less but I did fly 100,000 kms in 2023. 
+
+I love watching anime, eating food and dressing well. In future, I want to build my own clothing store and restaurant. 
 
 
-If you like what I do, maybe consider buying me a coffee/tea 🥺👉👈
 
-<a href="https://www.buymeacoffee.com/shadow_coder" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-red.png" alt="Buy Me A Coffee" width="150" ></a>
