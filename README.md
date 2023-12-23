@@ -1,7 +1,7 @@
 ## Hey! I'm Vishesh, but my friends call me Vish <img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="25px">
 
 [![LinkedIn Badge]()](https://linkedin.com/in/vishesh-gupta)
-[![Medium Badge]()](https://medium.com/shadow_coder)
+[!![Medium Badge](https://img.shields.io/badge/visheshgupta-black?logo=medium&logoColor=white&link=https%3A%2F%2Fmedium.com%2F%40visheshgupta)(https://medium.com/shadow_coder)
 [![Instagram Badge]()](https://instagram.com/shadow_coder)
 [![Outlook Badge]()](mailto:vishesh.gupta12@outlook.com)
 
