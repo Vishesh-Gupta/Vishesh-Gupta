@@ -1,17 +1,26 @@
-## Hey! I'm Vishesh, but my friends call me Vish <img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="25px">
+### Hey! I'm Vishesh, but my friends call me Vish <img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="25px">
 
-[![LinkedIn Badge]()](https://linkedin.com/in/vishesh-gupta)
-[!![Medium Badge](https://img.shields.io/badge/visheshgupta-black?logo=medium&logoColor=white&link=https%3A%2F%2Fmedium.com%2F%40visheshgupta)(https://medium.com/shadow_coder)
-[![Instagram Badge]()](https://instagram.com/shadow_coder)
-[![Outlook Badge]()](mailto:vishesh.gupta12@outlook.com)
+### You can reach me at
+[![LinkedIn Badge](https://img.shields.io/badge/vishesh--gupta-blue?logo=linkedin&logoColor=white)](https://linkedin.com/in/vishesh-gupta)
+[![Medium Badge](https://img.shields.io/badge/visheshgupta-black?logo=medium&logoColor=white)](https://medium.com/@visheshgupta)
+[![Badge](https://bkhrcvpb6vb6.runkit.sh)](https://instagram.com/shadow_coder)
+[![Outlook Badge](https://img.shields.io/badge/vishesh.gupta12%40outlook.com-blue?logo=microsoftoutlook&logoColor=white)](mailto:vishesh.gupta12@outlook.com)
 
 ### About Me
 
-I'm a Software Engineer, with a focus on Infrastructure and Site Reliability Engineering. Currently working at @ClearStreet to enhance scalability of modern financial solutions. I enjoy working on complex and challenging problems.
+#### 💼 Career 
+I'm a Software Engineer focusing on Infrastructure and Site Reliability Engineering. I am currently working at [**@ClearStreet**](https://clearstreet.io) to enhance the scalability of modern financial solutions. I enjoy working on complex and challenging problems while enjoying a great team and work culture.
 
-I am an avid traveller, and have visited 8 countries so far. I know this might sound a lot less but I did fly 100,000 kms in 2023. 
+#### Hobbies and Fun Facts
+✈️Traveling: Travelled 8 Countries and 100K Kms 
 
-I love watching anime, eating food and dressing well. In future, I want to build my own clothing store and restaurant. 
+📺 Anime: Watched 9000+ episodes of Anime
+
+🥘 Food: Have eaten at World #43 restaurant in Colombia
+
+🕴️ Fashion: Shopping addiction and an 👀 for great style
+
+
 
 
 
