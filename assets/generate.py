@@ -3,18 +3,18 @@
 Regenerate: python3 assets/generate.py
 Icons in assets/icons/ come from skillicons.dev (MIT).
 """
-import os, random, re
+import datetime, os, random, re
 
 OUT = os.path.dirname(os.path.abspath(__file__))
 ICONS = os.path.join(OUT, "icons")
 
 THEMES = {
     "dark": dict(card="#0d1117", border="#30363d", fg="#e6edf3", muted="#8b949e",
-                 faint="#21262d", tile="#161b22", grid="#161b22", accent="#2C96C7",
-                 green="#3fb950", amber="#d29922", purple="#a371f7", pink="#db61a2"),
+                 faint="#21262d", tile="#161b22", grid="#161b22", aurora=".16", accent="#2C96C7",
+                 green="#3fb950", amber="#d29922", red="#f85149", purple="#a371f7", pink="#db61a2"),
     "light": dict(card="#ffffff", border="#d0d7de", fg="#1f2328", muted="#656d76",
-                  faint="#eaeef2", tile="#f6f8fa", grid="#f0f3f6", accent="#1F7FAF",
-                  green="#1a7f37", amber="#9a6700", purple="#8250df", pink="#bf3989"),
+                  faint="#eaeef2", tile="#f6f8fa", grid="#f0f3f6", aurora=".09", accent="#1F7FAF",
+                  green="#1a7f37", amber="#9a6700", red="#cf222e", purple="#8250df", pink="#bf3989"),
 }
 
 SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif"
@@ -28,7 +28,7 @@ TAGLINE = "cloud architecture · devops · site reliability"
 
 CONNECT = [
     ("linkedin", "in/vishesh-gupta"),
-    ("github", "@vishesh-monoceros"),
+    ("github", "@vishesh-gupta"),
     ("email", "vishesh.gupta12@outlook.com"),
 ]
 
@@ -45,6 +45,21 @@ TOOLBOX = [
     ("platform", ["kubernetes", "docker", "terraform", "linux"]),
     ("code", ["python", "go", "bash"]),
     ("ops", ["prometheus", "grafana", "githubactions"]),
+]
+
+CAREER = [  # newest first: (hash, refs, message)
+    ("a1f9c2e", "HEAD -> main", "feat: Staff Software Engineer @ Alpaca"),
+    ("7c3e81b", "", "feat: Infrastructure Engineer @ Monoceros"),
+    ("4b2d9a0", "", "chore: 10 countries, 9000+ episodes, many tasting menus"),
+    ("0000001", "", "init: hello, world"),
+]
+
+PODS = [  # (name, ready, status, restarts); a status of None cycles through a crash loop
+    ("coffee-maker-7d4f9", "1/1", "Running", "0"),
+    ("pager-5c8e2x", "1/1", "Running", "3"),
+    ("side-project-x2k9q", "1/1", "Running", "12"),
+    ("curiosity-9f1a3", "1/1", "Running", "0"),
+    ("sleep-6b7d1", "0/1", None, "42"),
 ]
 
 TILES = [
@@ -113,7 +128,7 @@ def divider(y, t):
 def icon(kind, cx, cy, c):
     s = f'fill="none" stroke="{c}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'
     return {
-        "globe": f'<g {s}><circle cx="{cx}" cy="{cy}" r="11"/><ellipse cx="{cx}" cy="{cy}" rx="4.5" ry="11"/>'
+        "globe": f'<g {s}><circle cx="{cx}" cy="{cy}" r="11"/><ellipse cx="{cx}" cy="{cy}" rx="4.5" ry="11"><animate attributeName="rx" values="11;1;11" dur="6s" repeatCount="indefinite"/></ellipse>'
                  f'<path d="M{cx-11} {cy}h22M{cx-9.5} {cy-5.5}h19M{cx-9.5} {cy+5.5}h19"/></g>',
         "play": f'<g {s}><rect x="{cx-12}" y="{cy-9}" width="24" height="17" rx="3"/>'
                 f'<path d="M{cx-3} {cy-4}v8l6.5-4z" fill="{c}"/><path d="M{cx-5} {cy+12}h10"/></g>',
@@ -122,6 +137,39 @@ def icon(kind, cx, cy, c):
         "hanger": f'<g {s}><path d="M{cx-3} {cy-8}a3 3 0 1 1 3 3v2.5"/>'
                   f'<path d="M{cx} {cy-2.5}l-12 8.5a1.5 1.5 0 0 0 1 2.7h22a1.5 1.5 0 0 0 1-2.7z"/></g>',
     }[kind]
+
+
+def topology(t):
+    """Faint cluster graph with packets hopping between nodes."""
+    nodes = dict(a=(560, 112), b=(640, 80), c=(720, 124), d=(800, 92), e=(650, 170), f=(780, 172), g=(846, 138))
+    edges = ["ab", "bc", "cd", "ae", "ec", "cf", "fg", "dg"]
+    out = ['<g opacity=".55">']
+    for u, v in edges:
+        (x1, y1), (x2, y2) = nodes[u], nodes[v]
+        out.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{t["border"]}" stroke-dasharray="3 4"/>')
+    for i, (x, y) in enumerate(nodes.values()):
+        out.append(f'<circle class="breathe" style="animation-delay:{i*.7:.1f}s" cx="{x}" cy="{y}" r="4.5" fill="{t["card"]}" stroke="{t["accent"]}" stroke-width="1.4"/>')
+    rnd = random.Random(11)
+    for i, (u, v) in enumerate(edges):
+        (x1, y1), (x2, y2) = nodes[u], nodes[v]
+        if rnd.random() < .5:
+            x1, y1, x2, y2 = x2, y2, x1, y1
+        dur = rnd.uniform(2.4, 4.2)
+        col = t["green"] if i % 3 == 0 else t["accent"]
+        out.append(f'<circle r="2" fill="{col}" opacity="0"><animateMotion dur="{dur:.1f}s" begin="{i*.45:.2f}s" repeatCount="indefinite" path="M{x1} {y1} L{x2} {y2}"/>'
+                   f'<animate attributeName="opacity" values="0;1;1;0" dur="{dur:.1f}s" begin="{i*.45:.2f}s" repeatCount="indefinite"/></circle>')
+    out.append('</g>')
+    return "".join(out)
+
+
+def aurora(t, H):
+    """Soft blurred color fields drifting slowly behind everything."""
+    blobs = [(180, 90, 170, t["accent"], 0), (760, 220, 150, t["green"], 1),
+             (640, 700, 190, t["purple"], 2), (200, H - 260, 170, t["pink"], 3)]
+    op = t["aurora"]
+    return "".join(
+        f'<circle class="drift a{k % 3}" style="animation-delay:-{k*5}s" cx="{x}" cy="{y}" r="{r}" fill="{c}" opacity="{op}" filter="url(#blur)"/>'
+        for x, y, r, c, k in blobs)
 
 
 # ── sections (each drawn in its own local coordinates) ───────────────────────
@@ -133,6 +181,7 @@ def header(t, theme):
         f'<text x="48" y="172" class="mono rise d3" font-size="13" fill="{t["muted"]}">{TAGLINE}</text>',
         f'<g class="rise d3">{pill(780, 30, 80, "online", t, t["green"])}</g>',
     ]
+    out.append(topology(t))
     x = 48
     for i, (name, handle) in enumerate(CONNECT):
         out.append(logo(name, theme, x, 196, 26, "rise", f"animation-delay:{.6 + i*.1:.2f}s"))
@@ -162,6 +211,9 @@ def status(t):
         out.append(f'<text x="{W-40}" y="{y+25}" text-anchor="end" class="mono" font-size="13" fill="{t["green"]}">{metric}</text>')
         if i < len(ROWS) - 1:
             out.append(f'<line x1="40" x2="{W-40}" y1="{y+rowh-4}" y2="{y+rowh-4}" stroke="{t["faint"]}" stroke-dasharray="2 4"/>')
+    bars_w = n * (bw + gap)
+    out.append(f'<clipPath id="bars"><rect x="{bars_x}" y="{top}" width="{bars_w}" height="{rowh * len(ROWS)}"/></clipPath>'
+               f'<g clip-path="url(#bars)"><rect class="shimmer" x="{bars_x - 140}" y="{top}" width="140" height="{rowh * len(ROWS)}" fill="url(#sheen)"/></g>')
     return "\n  ".join(out), top + rowh * len(ROWS)
 
 
@@ -175,7 +227,8 @@ def toolbox(t, theme):
     for gi, (label, names) in enumerate(TOOLBOX):
         out.append(f'<text x="{x:.0f}" y="62" class="mono" font-size="11" fill="{t["muted"]}" letter-spacing=".5">{label}</text>')
         for name in names:
-            out.append(logo(name, theme, round(x), 72, size, "pop", f"animation-delay:{1.2 + k*.06:.2f}s"))
+            out.append(f'<g class="float" style="animation-delay:{-k*.37:.2f}s">'
+                       + logo(name, theme, round(x), 72, size, "pop", f"animation-delay:{1.2 + k*.06:.2f}s") + '</g>')
             x += size + gap
             k += 1
         x += group_gap - gap
@@ -193,6 +246,10 @@ def offcall(t):
         f'<text x="40" y="54" class="sans" font-size="17" font-weight="600" fill="{t["fg"]}">Life outside the terminal</text>',
         f'<path d="{arc}" fill="none" stroke="{t["border"]}" stroke-width="1.5" stroke-dasharray="2 6" stroke-linecap="round"/>',
     ]
+    rnd = random.Random(5)
+    for _ in range(22):
+        out.append(f'<circle class="twinkle" style="animation-delay:{rnd.uniform(0, 6):.1f}s;animation-duration:{rnd.uniform(3, 6):.1f}s" '
+                   f'cx="{rnd.uniform(290, 870):.0f}" cy="{rnd.uniform(8, 112):.0f}" r="{rnd.uniform(.7, 1.4):.1f}" fill="{t["muted"]}"/>')
     for i in range(10):
         u = (i + .5) / 10
         x, y = ((1-u)**3*a + 3*(1-u)**2*u*b + 3*(1-u)*u**2*c + u**3*d for a, b, c, d in zip(p0, p1, p2, p3))
@@ -219,10 +276,52 @@ def offcall(t):
     return "\n  ".join(out), ty + th
 
 
+def journey(t):
+    """Two terminal panels side by side: career as a git log, life as kubectl pods."""
+    ph, py = 176, 44
+    lx, lw = 40, 400
+    rx, rw = 460, W - 40 - 460
+    out = [
+        f'<text x="{lx}" y="28" class="mono" font-size="12.5" fill="{t["muted"]}">$ git log --graph --oneline career</text>',
+        f'<text x="{rx}" y="28" class="mono" font-size="12.5" fill="{t["muted"]}">$ kubectl get pods -n life</text>',
+        f'<rect x="{lx}" y="{py}" width="{lw}" height="{ph}" rx="12" fill="{t["tile"]}" stroke="{t["faint"]}"/>',
+        f'<rect x="{rx}" y="{py}" width="{rw}" height="{ph}" rx="12" fill="{t["tile"]}" stroke="{t["faint"]}"/>',
+    ]
+    # git graph
+    gx, y0, step = lx + 24, py + 30, 38
+    out.append(f'<line x1="{gx}" x2="{gx}" y1="{y0 - 4}" y2="{y0 + step * (len(CAREER) - 1) - 4}" stroke="{t["border"]}" stroke-width="2"/>')
+    for i, (sha, refs, msg) in enumerate(CAREER):
+        y = y0 + i * step
+        d = f"animation-delay:{2.0 + i*.15:.2f}s"
+        dot = ping_dot(gx, y - 4, 4.5, t["accent"]) if i == 0 else f'<circle cx="{gx}" cy="{y-4}" r="4" fill="{t["tile"]}" stroke="{t["muted"]}" stroke-width="1.6"/>'
+        ref = f' <tspan fill="{t["accent"]}">({refs})</tspan>' if refs else ""
+        out.append(f'<g class="rise" style="{d}">{dot}'
+                   f'<text x="{gx + 20}" y="{y}" class="mono" font-size="11.5" fill="{t["amber"]}">{sha}{ref}</text>'
+                   f'<text x="{gx + 20}" y="{y + 17}" class="sans" font-size="13" fill="{t["fg"]}">{msg}</text></g>')
+    # kubectl table
+    cols = [rx + 20, rx + 158, rx + 200, rx + rw - 20]
+    hy = py + 28
+    for x, h, anchor in zip(cols, ("NAME", "READY", "STATUS", "RESTARTS"), ("start", "start", "start", "end")):
+        out.append(f'<text x="{x}" y="{hy}" text-anchor="{anchor}" class="mono" font-size="11" fill="{t["muted"]}">{h}</text>')
+    for i, (name, ready, st, restarts) in enumerate(PODS):
+        y = hy + 26 + i * 24
+        d = f"animation-delay:{2.2 + i*.18:.2f}s"
+        if st is None:
+            cells = "".join(f'<text class="cycle c{k}" x="{cols[2]}" y="{y}" font-size="11" fill="{c}">{label}</text>'
+                            for k, (label, c) in enumerate((("ContainerCreating", t["amber"]), ("Running", t["green"]), ("CrashLoopBackOff", t["red"]))))
+        else:
+            cells = f'<text x="{cols[2]}" y="{y}" font-size="11" fill="{t["green"]}">{st}</text>'
+        out.append(f'<g class="rise mono" style="{d}">'
+                   f'<text x="{cols[0]}" y="{y}" font-size="11" fill="{t["fg"]}">{name}</text>'
+                   f'<text x="{cols[1]}" y="{y}" font-size="11" fill="{t["muted"]}">{ready}</text>{cells}'
+                   f'<text x="{cols[3]}" y="{y}" text-anchor="end" font-size="11" fill="{t["muted"]}">{restarts}</text></g>')
+    return "\n  ".join(out), py + ph
+
+
 def footer(t):
     out = [
-        f'<circle cx="44" cy="22" r="3.5" fill="{t["amber"]}"/>',
-        f'<text x="56" y="26" class="mono" font-size="12" fill="{t["muted"]}">sleep.service: <tspan fill="{t["amber"]}">degraded</tspan> · known issue, won\'t fix</text>',
+        ping_dot(44, 22, 3.5, t["green"]),
+        f'<text x="56" y="26" class="mono" font-size="12" fill="{t["muted"]}">last deployed {datetime.date.today():%Y-%m-%d} · build <tspan fill="{t["green"]}">passing</tspan></text>',
         f'<text x="{W-40}" y="26" text-anchor="end" class="mono" font-size="12" fill="{t["muted"]}">thanks for stopping by · <tspan fill="{t["green"]}">exit 0</tspan></text>',
     ]
     return "\n  ".join(out), 48
@@ -235,6 +334,7 @@ def profile(theme):
     parts, y = [], 0
     for fn, gap_after, rule in ((lambda: header(t, theme), 10, False),
                                 (lambda: status(t), 28, True),
+                                (lambda: journey(t), 24, True),
                                 (lambda: toolbox(t, theme), 20, True),
                                 (lambda: offcall(t), 22, True),
                                 (lambda: footer(t), 0, False)):
@@ -244,7 +344,7 @@ def profile(theme):
         if rule:
             parts.append(divider(y - gap_after / 2, t))
     H = y
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="{NAME}, {ROLE}. Status: cloud architecture, DevOps and SRE, Kubernetes, infrastructure as code and observability all operational. Toolbox: AWS, Google Cloud, Kubernetes, Docker, Terraform, Linux, Python, Go, Bash, Prometheus, Grafana, GitHub Actions. Off-call: 10 countries, 9000+ anime episodes, world #43 dining, fashion and style.">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="{NAME}, {ROLE}. Status: cloud architecture, DevOps and SRE, Kubernetes, infrastructure as code and observability all operational. Toolbox: AWS, Google Cloud, Kubernetes, Docker, Terraform, Linux, Python, Go, Bash, Prometheus, Grafana, GitHub Actions. Career: Staff Software Engineer at Alpaca, previously Infrastructure Engineer at Monoceros. Off-call: 10 countries, 9000+ anime episodes, world #43 dining, fashion and style.">
   <defs>
     <linearGradient id="trace" x1="0" x2="{W}" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="{t['accent']}" stop-opacity="0"/>
@@ -262,6 +362,10 @@ def profile(theme):
     <mask id="beat" maskUnits="userSpaceOnUse" x="0" y="238" width="{W}" height="64">
       <g class="scroll"><path d="{heartbeat(272, P)}" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></g>
     </mask>
+    <linearGradient id="sheen" x1="0" x2="1">
+      <stop offset="0" stop-color="{t['fg']}" stop-opacity="0"/><stop offset=".5" stop-color="{t['fg']}" stop-opacity=".22"/><stop offset="1" stop-color="{t['fg']}" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="blur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="70"/></filter>
     <clipPath id="clip"><rect x="1" y="1" width="{W-2}" height="{H-2}" rx="16"/></clipPath>
     <style>
       .sans {{ font-family: {SANS}; }}
@@ -275,6 +379,25 @@ def profile(theme):
       .cursor {{ animation: blink 1.1s steps(1) infinite; }}
       .stamp {{ animation: stamp 9s ease-out infinite; }}
       .progress {{ transform-box: fill-box; transform-origin: left; animation: load 4s ease-in-out infinite; }}
+      .float {{ animation: float 4.5s ease-in-out infinite; }}
+      .breathe {{ transform-box: fill-box; transform-origin: center; animation: breathe 4s ease-in-out infinite; }}
+      .shimmer {{ animation: shimmer 7s ease-in-out infinite 2.5s; }}
+      .twinkle {{ opacity: .1; animation: twinkle 4s ease-in-out infinite; }}
+      .drift {{ animation: drift0 22s ease-in-out infinite alternate; }}
+      .drift.a1 {{ animation-name: drift1; animation-duration: 26s; }}
+      .drift.a2 {{ animation-name: drift2; animation-duration: 30s; }}
+      .cycle {{ opacity: 0; animation: cycle 7.5s steps(1) infinite 3s; }}
+      .cycle.c1 {{ animation-name: cycle1; }} .cycle.c2 {{ animation-name: cycle2; }}
+      @keyframes float {{ 50% {{ transform: translateY(-3px); }} }}
+      @keyframes breathe {{ 50% {{ transform: scale(1.25); }} }}
+      @keyframes shimmer {{ 0% {{ transform: translateX(0); }} 45%, 100% {{ transform: translateX({48*8 + 140}px); }} }}
+      @keyframes twinkle {{ 50% {{ opacity: .7; }} }}
+      @keyframes drift0 {{ to {{ transform: translate(120px, 40px); }} }}
+      @keyframes drift1 {{ to {{ transform: translate(-140px, 60px); }} }}
+      @keyframes drift2 {{ to {{ transform: translate(80px, -70px); }} }}
+      @keyframes cycle {{ 0% {{ opacity: 1; }} 20%, 100% {{ opacity: 0; }} }}
+      @keyframes cycle1 {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 33%, 100% {{ opacity: 0; }} }}
+      @keyframes cycle2 {{ 0%, 33% {{ opacity: 0; }} 34%, 100% {{ opacity: 1; }} }}
       @keyframes rise {{ from {{ opacity: 0; transform: translateY(6px); }} to {{ opacity: 1; transform: none; }} }}
       @keyframes pop {{ from {{ opacity: 0; transform: scale(.6); }} to {{ opacity: 1; transform: none; }} }}
       @keyframes ping {{ 0% {{ transform: scale(1); opacity: .6; }} 100% {{ transform: scale(3.2); opacity: 0; }} }}
@@ -287,7 +410,7 @@ def profile(theme):
     </style>
   </defs>
   <rect x="1" y="1" width="{W-2}" height="{H-2}" rx="16" fill="{t['card']}" stroke="{t['border']}"/>
-  <g clip-path="url(#clip)"><rect width="{W}" height="320" fill="url(#grid)" mask="url(#gridfade)"/></g>
+  <g clip-path="url(#clip)">{aurora(t, H)}<rect width="{W}" height="320" fill="url(#grid)" mask="url(#gridfade)"/></g>
   {chr(10).join(parts)}
 </svg>
 '''
