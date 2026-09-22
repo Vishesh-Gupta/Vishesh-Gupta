@@ -10,10 +10,10 @@ ICONS = os.path.join(OUT, "icons")
 
 THEMES = {
     "dark": dict(card="#0d1117", border="#30363d", fg="#e6edf3", muted="#8b949e",
-                 faint="#21262d", tile="#161b22", grid="#161b22", aurora=".16", accent="#2C96C7",
+                 faint="#21262d", tile="#161b22", grid="#161b22", aurora=".16", sheen=("#e6edf3", ".22"), accent="#2C96C7",
                  green="#3fb950", amber="#d29922", red="#f85149", purple="#a371f7", pink="#db61a2"),
     "light": dict(card="#ffffff", border="#d0d7de", fg="#1f2328", muted="#656d76",
-                  faint="#eaeef2", tile="#f6f8fa", grid="#f0f3f6", aurora=".09", accent="#1F7FAF",
+                  faint="#eaeef2", tile="#f6f8fa", grid="#f0f3f6", aurora=".09", sheen=("#ffffff", ".75"), accent="#1F7FAF",
                   green="#1a7f37", amber="#9a6700", red="#cf222e", purple="#8250df", pink="#bf3989"),
 }
 
@@ -50,8 +50,14 @@ TOOLBOX = [
 CAREER = [  # newest first: (hash, refs, message)
     ("a1f9c2e", "HEAD -> main", "feat: Staff Software Engineer @ Alpaca"),
     ("7c3e81b", "", "feat: Infrastructure Engineer @ Monoceros"),
-    ("4b2d9a0", "", "chore: 10 countries, 9000+ episodes, many tasting menus"),
-    ("0000001", "", "init: hello, world"),
+    (None, "working tree", "wip: building what's next"),  # uncommitted, drawn as a live entry
+]
+
+SLOS = [  # (title, subtitle, percent, color)
+    ("Error budget", "left this quarter", 97, "green"),
+    ("Toil automated", "the rest is next sprint", 90, "accent"),
+    ("Alerts actionable", "no pager noise", 100, "purple"),
+    ("Coffee reserves", "refill scheduled", 12, "amber"),
 ]
 
 PODS = [  # (name, ready, status, restarts); a status of None cycles through a crash loop
@@ -276,6 +282,31 @@ def offcall(t):
     return "\n  ".join(out), ty + th
 
 
+def slos(t):
+    """Radial SLO gauges that fill on load; low ones slowly drain and refill."""
+    colw = (W - 80) / len(SLOS)
+    r, cy = 26, 72
+    out = [f'<text x="40" y="28" class="mono" font-size="12.5" fill="{t["muted"]}">$ slo report --window 30d</text>']
+    for i, (title, sub, pct, col) in enumerate(SLOS):
+        cx, c = 40 + i * colw + r + 8, t[col]
+        begin = 1.4 + i * .15
+        fill = (f'<animate attributeName="stroke-dasharray" from="0 100" to="{pct} 100" dur="1.6s" begin="{begin:.2f}s" fill="freeze" '
+                f'calcMode="spline" keyTimes="0;1" keySplines=".2 .8 .2 1"/>')
+        if pct < 25:
+            fill += (f'<animate attributeName="stroke-dasharray" values="{pct} 100;{pct/3:.0f} 100;{pct} 100" dur="9s" '
+                     f'begin="{begin + 1.6:.2f}s" repeatCount="indefinite"/>')
+        out.append(
+            f'<g class="rise" style="animation-delay:{begin:.2f}s">'
+            f'<circle class="spin" cx="{cx}" cy="{cy}" r="{r + 7}" fill="none" stroke="{t["border"]}" stroke-dasharray="1 5"/>'
+            f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{t["faint"]}" stroke-width="6"/>'
+            f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{c}" stroke-width="6" stroke-linecap="round" pathLength="100" '
+            f'stroke-dasharray="0 100" transform="rotate(-90 {cx} {cy})">{fill}</circle>'
+            f'<text x="{cx}" y="{cy + 4}" text-anchor="middle" class="mono" font-size="12" font-weight="700" fill="{t["fg"]}">{pct}%</text>'
+            f'<text x="{cx + r + 18}" y="{cy - 3}" class="sans" font-size="14" font-weight="600" fill="{t["fg"]}">{title}</text>'
+            f'<text x="{cx + r + 18}" y="{cy + 15}" class="sans" font-size="11.5" fill="{t["muted"]}">{sub}</text></g>')
+    return "\n  ".join(out), cy + r + 16
+
+
 def journey(t):
     """Two terminal panels side by side: career as a git log, life as kubectl pods."""
     ph, py = 176, 44
@@ -288,12 +319,24 @@ def journey(t):
         f'<rect x="{rx}" y="{py}" width="{rw}" height="{ph}" rx="12" fill="{t["tile"]}" stroke="{t["faint"]}"/>',
     ]
     # git graph
-    gx, y0, step = lx + 24, py + 30, 38
-    out.append(f'<line x1="{gx}" x2="{gx}" y1="{y0 - 4}" y2="{y0 + step * (len(CAREER) - 1) - 4}" stroke="{t["border"]}" stroke-width="2"/>')
+    gx, step = lx + 24, 50
+    y0 = py + (ph - step * (len(CAREER) - 1) - 17) / 2 + 8
+    committed = [i for i, c in enumerate(CAREER) if c[0]]
+    # the wip entry sits above HEAD; committed history hangs below it
+    order = [i for i, c in enumerate(CAREER) if not c[0]] + committed
+    ys = {i: y0 + k * step for k, i in enumerate(order)}
+    first, last = ys[committed[0]], ys[committed[-1]]
+    out.append(f'<line x1="{gx}" x2="{gx}" y1="{first - 4}" y2="{last - 4}" stroke="{t["border"]}" stroke-width="2"/>')
     for i, (sha, refs, msg) in enumerate(CAREER):
-        y = y0 + i * step
-        d = f"animation-delay:{2.0 + i*.15:.2f}s"
-        dot = ping_dot(gx, y - 4, 4.5, t["accent"]) if i == 0 else f'<circle cx="{gx}" cy="{y-4}" r="4" fill="{t["tile"]}" stroke="{t["muted"]}" stroke-width="1.6"/>'
+        y = ys[i]
+        d = f"animation-delay:{2.0 + order.index(i)*.15:.2f}s"
+        if sha is None:
+            out.append(f'<line class="flow" x1="{gx}" x2="{gx}" y1="{y - 4}" y2="{first - 4}" stroke="{t["accent"]}" stroke-width="2" stroke-dasharray="3 4"/>')
+            out.append(f'<g class="rise" style="{d}"><circle class="breathe" cx="{gx}" cy="{y-4}" r="4.5" fill="{t["tile"]}" stroke="{t["accent"]}" stroke-width="1.6" stroke-dasharray="2 2"/>'
+                       f'<text x="{gx + 20}" y="{y}" class="mono" font-size="11.5" fill="{t["muted"]}">••••••• <tspan fill="{t["accent"]}">({refs})</tspan></text>'
+                       f'<text x="{gx + 20}" y="{y + 17}" class="sans" font-size="13" font-style="italic" fill="{t["muted"]}">{msg}<tspan class="cursor" fill="{t["accent"]}"> ▍</tspan></text></g>')
+            continue
+        dot = ping_dot(gx, y - 4, 4.5, t["accent"]) if i == committed[0] else f'<circle cx="{gx}" cy="{y-4}" r="4" fill="{t["tile"]}" stroke="{t["muted"]}" stroke-width="1.6"/>'
         ref = f' <tspan fill="{t["accent"]}">({refs})</tspan>' if refs else ""
         out.append(f'<g class="rise" style="{d}">{dot}'
                    f'<text x="{gx + 20}" y="{y}" class="mono" font-size="11.5" fill="{t["amber"]}">{sha}{ref}</text>'
@@ -334,6 +377,7 @@ def profile(theme):
     parts, y = [], 0
     for fn, gap_after, rule in ((lambda: header(t, theme), 10, False),
                                 (lambda: status(t), 28, True),
+                                (lambda: slos(t), 20, True),
                                 (lambda: journey(t), 24, True),
                                 (lambda: toolbox(t, theme), 20, True),
                                 (lambda: offcall(t), 22, True),
@@ -344,7 +388,7 @@ def profile(theme):
         if rule:
             parts.append(divider(y - gap_after / 2, t))
     H = y
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="{NAME}, {ROLE}. Status: cloud architecture, DevOps and SRE, Kubernetes, infrastructure as code and observability all operational. Toolbox: AWS, Google Cloud, Kubernetes, Docker, Terraform, Linux, Python, Go, Bash, Prometheus, Grafana, GitHub Actions. Career: Staff Software Engineer at Alpaca, previously Infrastructure Engineer at Monoceros. Off-call: 10 countries, 9000+ anime episodes, world #43 dining, fashion and style.">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="{NAME}, {ROLE}. Status: cloud architecture, DevOps and SRE, Kubernetes, infrastructure as code and observability all operational. Toolbox: AWS, Google Cloud, Kubernetes, Docker, Terraform, Linux, Python, Go, Bash, Prometheus, Grafana, GitHub Actions. SLOs: 97% error budget left, 90% toil automated, 100% actionable alerts, 12% coffee. Career: Staff Software Engineer at Alpaca, previously Infrastructure Engineer at Monoceros. Off-call: 10 countries, 9000+ anime episodes, world #43 dining, fashion and style.">
   <defs>
     <linearGradient id="trace" x1="0" x2="{W}" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="{t['accent']}" stop-opacity="0"/>
@@ -363,7 +407,7 @@ def profile(theme):
       <g class="scroll"><path d="{heartbeat(272, P)}" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></g>
     </mask>
     <linearGradient id="sheen" x1="0" x2="1">
-      <stop offset="0" stop-color="{t['fg']}" stop-opacity="0"/><stop offset=".5" stop-color="{t['fg']}" stop-opacity=".22"/><stop offset="1" stop-color="{t['fg']}" stop-opacity="0"/>
+      <stop offset="0" stop-color="{t['sheen'][0]}" stop-opacity="0"/><stop offset=".5" stop-color="{t['sheen'][0]}" stop-opacity="{t['sheen'][1]}"/><stop offset="1" stop-color="{t['sheen'][0]}" stop-opacity="0"/>
     </linearGradient>
     <filter id="blur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="70"/></filter>
     <clipPath id="clip"><rect x="1" y="1" width="{W-2}" height="{H-2}" rx="16"/></clipPath>
@@ -379,6 +423,10 @@ def profile(theme):
       .cursor {{ animation: blink 1.1s steps(1) infinite; }}
       .stamp {{ animation: stamp 9s ease-out infinite; }}
       .progress {{ transform-box: fill-box; transform-origin: left; animation: load 4s ease-in-out infinite; }}
+      .spin {{ transform-box: fill-box; transform-origin: center; animation: spin 40s linear infinite; }}
+      .flow {{ animation: flow 1.2s linear infinite; }}
+      @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
+      @keyframes flow {{ to {{ stroke-dashoffset: -14; }} }}
       .float {{ animation: float 4.5s ease-in-out infinite; }}
       .breathe {{ transform-box: fill-box; transform-origin: center; animation: breathe 4s ease-in-out infinite; }}
       .shimmer {{ animation: shimmer 7s ease-in-out infinite 2.5s; }}
