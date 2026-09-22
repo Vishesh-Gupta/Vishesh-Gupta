@@ -31,7 +31,7 @@ def banner(t):
             pts.append((x, y0 + rnd.uniform(-2.5, 2.5)))
             x += 12
     path = "M" + " L".join(f"{px:.1f},{py:.1f}" for px, py in pts)
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="Vishesh Gupta, Infrastructure Engineer at Monoceros">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="Vishesh Gupta, Staff Software Engineer at Alpaca">
   <defs>
     <linearGradient id="trace" x1="0" x2="1">
       <stop offset="0" stop-color="{t['accent']}" stop-opacity="0"/>
@@ -65,7 +65,7 @@ def banner(t):
 
   <text x="48" y="58" class="mono rise" font-size="14" fill="{t['muted']}">~ $ whoami<tspan class="cursor" fill="{t['accent']}"> ▍</tspan></text>
   <text x="46" y="112" class="sans rise d1" font-size="46" font-weight="700" fill="{t['fg']}" letter-spacing="-1">Vishesh Gupta</text>
-  <text x="48" y="146" class="sans rise d2" font-size="18" fill="{t['accent']}" font-weight="600">Infrastructure Engineer @ Monoceros</text>
+  <text x="48" y="146" class="sans rise d2" font-size="18" fill="{t['accent']}" font-weight="600">Staff Software Engineer at Alpaca</text>
   <text x="48" y="172" class="mono rise d3" font-size="13" fill="{t['muted']}">cloud architecture · devops · site reliability</text>
 
   <g class="rise d3">
