@@ -68,11 +68,26 @@ PODS = [  # (name, ready, status, restarts); a status of None cycles through a c
     ("sleep-6b7d1", "0/1", None, "42"),
 ]
 
-TILES = [
-    ("globe", "accent", "10", "countries explored", "passport: mostly stamps"),
-    ("play", "purple", "9000+", "anime episodes", "next episode loading…"),
-    ("cloche", "amber", "#43", "world-ranked dining", "tasting menus, taken seriously"),
-    ("hanger", "pink", "∞", "fashion &amp; style", "always dressed for prod"),
+PIPELINE = [  # (stage, duration)
+    ("commit", "0s"), ("lint", "4s"), ("test", "38s"), ("build", "51s"),
+    ("canary 5%", "5m"), ("canary 50%", "10m"), ("production", "✓"),
+]
+
+LOGS = [  # (level, message) for the scrolling ticker
+    ("OK", "pager quiet for 72h"),
+    ("INFO", "coffee v12.3 rolled out to prod"),
+    ("WARN", "sleep below SLO threshold"),
+    ("INFO", "3 anime episodes queued"),
+    ("OK", "terraform plan: no changes"),
+    ("INFO", "new stamp added to passport"),
+    ("OK", "p99 latency 42ms"),
+]
+
+TILES = [  # (icon, color, count-up frames ending on the final value, label, subtitle)
+    ("globe", "accent", ["0", "3", "6", "8", "10"], "countries explored", "passport: mostly stamps"),
+    ("play", "purple", ["0", "1,200", "3,800", "6,500", "8,700", "9000+"], "anime episodes", "next episode loading…"),
+    ("cloche", "amber", ["#99", "#80", "#61", "#50", "#43"], "world-ranked dining", "tasting menus, taken seriously"),
+    ("hanger", "pink", ["0", "1", "99", "∞"], "fashion &amp; style", "always dressed for prod"),
 ]
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -145,6 +160,12 @@ def icon(kind, cx, cy, c):
     }[kind]
 
 
+def typed(word, start, step=.09):
+    """Reveal a word one character at a time."""
+    return "".join(f'<tspan opacity="0">{ch}<set attributeName="opacity" to="1" begin="{start + i*step:.2f}s" fill="freeze"/></tspan>'
+                   for i, ch in enumerate(word))
+
+
 def topology(t):
     """Faint cluster graph with packets hopping between nodes."""
     nodes = dict(a=(560, 112), b=(640, 80), c=(720, 124), d=(800, 92), e=(650, 170), f=(780, 172), g=(846, 138))
@@ -181,7 +202,7 @@ def aurora(t, H):
 # ── sections (each drawn in its own local coordinates) ───────────────────────
 def header(t, theme):
     out = [
-        f'<text x="48" y="58" class="mono rise" font-size="14" fill="{t["muted"]}">~ $ whoami<tspan class="cursor" fill="{t["accent"]}"> ▍</tspan></text>',
+        f'<text x="48" y="58" class="mono rise" font-size="14" fill="{t["muted"]}">~ $ {typed("whoami", .25)}<tspan class="cursor" fill="{t["accent"]}"> ▍</tspan></text>',
         f'<text x="46" y="112" class="sans rise d1" font-size="46" font-weight="700" fill="{t["fg"]}" letter-spacing="-1">{NAME}</text>',
         f'<text x="48" y="146" class="sans rise d2" font-size="18" fill="{t["accent"]}" font-weight="600">{ROLE}</text>',
         f'<text x="48" y="172" class="mono rise d3" font-size="13" fill="{t["muted"]}">{TAGLINE}</text>',
@@ -217,7 +238,7 @@ def status(t):
         out.append(f'<text x="{W-40}" y="{y+25}" text-anchor="end" class="mono" font-size="13" fill="{t["green"]}">{metric}</text>')
         if i < len(ROWS) - 1:
             out.append(f'<line x1="40" x2="{W-40}" y1="{y+rowh-4}" y2="{y+rowh-4}" stroke="{t["faint"]}" stroke-dasharray="2 4"/>')
-    bars_w = n * (bw + gap)
+    bars_w = n * (bw + gap) - gap
     out.append(f'<clipPath id="bars"><rect x="{bars_x}" y="{top}" width="{bars_w}" height="{rowh * len(ROWS)}"/></clipPath>'
                f'<g clip-path="url(#bars)"><rect class="shimmer" x="{bars_x - 140}" y="{top}" width="140" height="{rowh * len(ROWS)}" fill="url(#sheen)"/></g>')
     return "\n  ".join(out), top + rowh * len(ROWS)
@@ -244,6 +265,17 @@ def toolbox(t, theme):
     return "\n  ".join(out), 140
 
 
+def countup(frames, x, y, start, t, step=.14):
+    """Stack each frame and flash them in turn; the last one stays."""
+    out = []
+    for k, f in enumerate(frames):
+        last = k == len(frames) - 1
+        hold = 'fill="freeze"' if last else f'dur="{step:.2f}s"'
+        anim = f'<set attributeName="opacity" to="1" begin="{start + k*step:.2f}s" {hold}/>'
+        out.append(f'<text x="{x}" y="{y}" opacity="0" class="sans" font-size="30" font-weight="700" fill="{t["fg"]}" letter-spacing="-.5">{f}{anim}</text>')
+    return "".join(out)
+
+
 def offcall(t):
     p0, p1, p2, p3 = (300, 94), (440, 40), (700, 40), (840, 94)
     arc = f"M{p0[0]} {p0[1]} C {p1[0]} {p1[1]}, {p2[0]} {p2[1]}, {p3[0]} {p3[1]}"
@@ -265,7 +297,7 @@ def offcall(t):
 
     tg, th, ty = 14, 150, 124
     tw = (W - 80 - tg * (len(TILES) - 1)) / len(TILES)
-    for i, (ic, col, big, label, sub) in enumerate(TILES):
+    for i, (ic, col, frames, label, sub) in enumerate(TILES):
         x, c = 40 + i * (tw + tg), t[col]
         extra = ""
         if ic == "play":
@@ -274,7 +306,7 @@ def offcall(t):
         out.append(f'''<g class="rise" style="animation-delay:{1.8 + i*.12:.2f}s">
       <rect x="{x}" y="{ty}" width="{tw}" height="{th}" rx="12" fill="{t['tile']}" stroke="{t['faint']}"/>
       {icon(ic, x + 34, ty + 34, c)}
-      <text x="{x+20}" y="{ty+88}" class="sans" font-size="30" font-weight="700" fill="{t['fg']}" letter-spacing="-.5">{big}</text>
+      {countup(frames, x + 20, ty + 88, 1.9 + i*.12, t)}
       <text x="{x+20}" y="{ty+108}" class="sans" font-size="13" font-weight="600" fill="{c}">{label}</text>
       <text x="{x+20}" y="{ty+125}" class="sans" font-size="11.5" fill="{t['muted']}">{sub}</text>
       {extra}
@@ -305,6 +337,60 @@ def slos(t):
             f'<text x="{cx + r + 18}" y="{cy - 3}" class="sans" font-size="14" font-weight="600" fill="{t["fg"]}">{title}</text>'
             f'<text x="{cx + r + 18}" y="{cy + 15}" class="sans" font-size="11.5" fill="{t["muted"]}">{sub}</text></g>')
     return "\n  ".join(out), cy + r + 16
+
+
+def pipeline(t):
+    """A release walking through CI/CD stages on a loop."""
+    n, T, travel, hold = len(PIPELINE), 10, .7, .93
+    x0, x1, cy = 76, W - 76, 74
+    out = [
+        f'<text x="40" y="28" class="mono" font-size="12.5" fill="{t["muted"]}">$ git push origin main</text>',
+        f'<text x="{W-110}" y="28" text-anchor="end" class="mono" font-size="12.5" fill="{t["muted"]}">run #4815 ·</text>',
+        f'<text class="running mono" x="{W-40}" y="28" text-anchor="end" font-size="12.5" fill="{t["amber"]}">running…</text>',
+        f'<text class="deployed mono" x="{W-40}" y="28" text-anchor="end" font-size="12.5" fill="{t["green"]}">deployed</text>',
+        f'<line x1="{x0}" x2="{x1}" y1="{cy}" y2="{cy}" stroke="{t["faint"]}" stroke-width="3" stroke-linecap="round"/>',
+        f'<line class="pipe" x1="{x0}" x2="{x1}" y1="{cy}" y2="{cy}" stroke="url(#pipegrad)" stroke-width="3" stroke-linecap="round"/>',
+    ]
+    css = []
+    for k, (stage, dur) in enumerate(PIPELINE):
+        cx = x0 + (x1 - x0) * k / (n - 1)
+        reach = travel * k / (n - 1) * 100
+        run = max(reach - 6, 0)
+        css.append(f"@keyframes run{k} {{ 0%, {run:.1f}% {{ opacity: 0; }} {run + .1:.1f}%, {reach:.1f}% {{ opacity: 1; }} {reach + .1:.1f}%, 100% {{ opacity: 0; }} }}")
+        css.append(f"@keyframes done{k} {{ 0%, {reach:.1f}% {{ opacity: 0; }} {reach + .1:.1f}%, {hold*100:.0f}% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}")
+        out.append(f'<circle cx="{cx:.1f}" cy="{cy}" r="11" fill="{t["card"]}" stroke="{t["border"]}" stroke-width="1.5"/>')
+        out.append(f'<circle style="animation: run{k} {T}s linear infinite 1.5s; opacity: 0" cx="{cx:.1f}" cy="{cy}" r="11" fill="{t["card"]}" stroke="{t["amber"]}" stroke-width="2" stroke-dasharray="4 3"/>')
+        out.append(f'<g style="animation: done{k} {T}s linear infinite 1.5s; opacity: 0"><circle cx="{cx:.1f}" cy="{cy}" r="11" fill="{t["green"]}"/>'
+                   f'<path d="M{cx-4.5:.1f} {cy}l3 3 6-6.5" fill="none" stroke="{t["card"]}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></g>')
+        out.append(f'<text x="{cx:.1f}" y="{cy + 30}" text-anchor="middle" class="sans" font-size="12.5" font-weight="600" fill="{t["fg"]}">{stage}</text>')
+        out.append(f'<text x="{cx:.1f}" y="{cy + 46}" text-anchor="middle" class="mono" font-size="11" fill="{t["muted"]}">{dur}</text>')
+    css.append(f".pipe {{ transform-box: fill-box; transform-origin: left; transform: scaleX(0); animation: pipe {T}s linear infinite 1.5s; }}")
+    css.append(f"@keyframes pipe {{ 0% {{ transform: scaleX(0); opacity: 1; }} {travel*100:.0f}%, {hold*100:.0f}% {{ transform: scaleX(1); opacity: 1; }} 100% {{ transform: scaleX(1); opacity: 0; }} }}")
+    css.append(f".deployed {{ opacity: 0; animation: dep {T}s linear infinite 1.5s; }}")
+    css.append(f".running {{ animation: runlabel {T}s linear infinite 1.5s; }}")
+    css.append(f"@keyframes runlabel {{ 0%, {travel*100:.0f}% {{ opacity: 1; }} {travel*100 + 1:.0f}%, {hold*100:.0f}% {{ opacity: 0; }} 100% {{ opacity: 1; }} }}")
+    css.append(f"@keyframes dep {{ 0%, {travel*100:.0f}% {{ opacity: 0; }} {travel*100 + 1:.0f}%, {hold*100:.0f}% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}")
+    return "\n  ".join(out), cy + 58, "\n      ".join(css)
+
+
+def ticker(t):
+    """Log lines drifting right to left; positions are explicit so the loop is seamless."""
+    colors = dict(OK=t["green"], INFO=t["accent"], WARN=t["amber"])
+    items, x = [], 0
+    for level, msg in LOGS:
+        items.append((x, level, msg))
+        x += (len(level) + len(msg) + 3) * 6.9 + 44
+    period = x
+    out = [f'<rect x="40" y="0" width="{W-80}" height="34" rx="10" fill="{t["tile"]}" stroke="{t["faint"]}"/>',
+           f'<g mask="url(#tickerfade)"><g class="ticker">']
+    for rep_ in range(3):
+        for ix, level, msg in items:
+            out.append(f'<text x="{56 + ix + rep_*period:.1f}" y="21.5" class="mono" font-size="11.5" fill="{t["muted"]}">'
+                       f'<tspan fill="{colors[level]}">[{level}]</tspan> {msg}</text>')
+    out.append('</g></g>')
+    css = (f".ticker {{ animation: ticker {period/22:.1f}s linear infinite; }}\n"
+           f"      @keyframes ticker {{ to {{ transform: translateX(-{period:.1f}px); }} }}")
+    return "\n  ".join(out), 34, css
 
 
 def journey(t):
@@ -374,21 +460,24 @@ def footer(t):
 def profile(theme):
     t = THEMES[theme]
     P = 300
-    parts, y = [], 0
+    parts, y, extra_css = [], 0, []
     for fn, gap_after, rule in ((lambda: header(t, theme), 10, False),
                                 (lambda: status(t), 28, True),
                                 (lambda: slos(t), 20, True),
+                                (lambda: pipeline(t), 22, True),
                                 (lambda: journey(t), 24, True),
                                 (lambda: toolbox(t, theme), 20, True),
-                                (lambda: offcall(t), 22, True),
+                                (lambda: offcall(t), 22, False),
+                                (lambda: ticker(t), 18, False),
                                 (lambda: footer(t), 0, False)):
-        body, h = fn()
+        body, h, *extra = fn()
+        extra_css += extra
         parts.append(f'<g transform="translate(0 {y})">\n  {body}\n  </g>')
         y += h + gap_after
         if rule:
             parts.append(divider(y - gap_after / 2, t))
     H = y
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="{NAME}, {ROLE}. Status: cloud architecture, DevOps and SRE, Kubernetes, infrastructure as code and observability all operational. Toolbox: AWS, Google Cloud, Kubernetes, Docker, Terraform, Linux, Python, Go, Bash, Prometheus, Grafana, GitHub Actions. SLOs: 97% error budget left, 90% toil automated, 100% actionable alerts, 12% coffee. Career: Staff Software Engineer at Alpaca, previously Infrastructure Engineer at Monoceros. Off-call: 10 countries, 9000+ anime episodes, world #43 dining, fashion and style.">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="{NAME}, {ROLE}. Status: cloud architecture, DevOps and SRE, Kubernetes, infrastructure as code and observability all operational. Toolbox: AWS, Google Cloud, Kubernetes, Docker, Terraform, Linux, Python, Go, Bash, Prometheus, Grafana, GitHub Actions. Latest deploy: commit, lint, test, build, canary, production. SLOs: 97% error budget left, 90% toil automated, 100% actionable alerts, 12% coffee. Career: Staff Software Engineer at Alpaca, previously Infrastructure Engineer at Monoceros. Off-call: 10 countries, 9000+ anime episodes, world #43 dining, fashion and style.">
   <defs>
     <linearGradient id="trace" x1="0" x2="{W}" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="{t['accent']}" stop-opacity="0"/>
@@ -410,6 +499,13 @@ def profile(theme):
       <stop offset="0" stop-color="{t['sheen'][0]}" stop-opacity="0"/><stop offset=".5" stop-color="{t['sheen'][0]}" stop-opacity="{t['sheen'][1]}"/><stop offset="1" stop-color="{t['sheen'][0]}" stop-opacity="0"/>
     </linearGradient>
     <filter id="blur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="70"/></filter>
+    <linearGradient id="pipegrad" x1="0" x2="1">
+      <stop offset="0" stop-color="{t['accent']}"/><stop offset="1" stop-color="{t['green']}"/>
+    </linearGradient>
+    <linearGradient id="edgefade" x1="0" x2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".06" stop-color="#fff"/><stop offset=".94" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="tickerfade" maskUnits="userSpaceOnUse" x="40" y="0" width="{W-80}" height="34"><rect x="40" y="0" width="{W-80}" height="34" fill="url(#edgefade)"/></mask>
     <clipPath id="clip"><rect x="1" y="1" width="{W-2}" height="{H-2}" rx="16"/></clipPath>
     <style>
       .sans {{ font-family: {SANS}; }}
@@ -454,7 +550,8 @@ def profile(theme):
       @keyframes blink {{ 50% {{ opacity: 0; }} }}
       @keyframes stamp {{ 0%, 4% {{ fill: {t['card']}; }} 8%, 100% {{ fill: {t['accent']}; }} }}
       @keyframes load {{ from {{ transform: scaleX(0); }} to {{ transform: scaleX(1); }} }}
-      @media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important; opacity: 1 !important; }} }}
+      {chr(10).join("      " + c for c in extra_css)}
+      @media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important; }} .rise, .pop, .bar, .cycle.c2 {{ opacity: 1 !important; }} }}
     </style>
   </defs>
   <rect x="1" y="1" width="{W-2}" height="{H-2}" rx="16" fill="{t['card']}" stroke="{t['border']}"/>
