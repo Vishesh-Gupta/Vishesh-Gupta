@@ -1,6 +1,6 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
-  <img src="assets/banner-light.svg" alt="Vishesh Gupta, Infrastructure Engineer @ Monoceros" width="100%">
+  <img src="assets/banner-light.svg" alt="Vishesh Gupta, Staff Software Engineer at Alpaca" width="100%">
 </picture>
 
 <p align="center">
@@ -24,7 +24,7 @@
 ```python
 class Vishesh:
     def __init__(self):
-        self.role = "Infrastructure Engineer @ Monoceros"
+        self.role = "Staff Software Engineer at Alpaca"
         self.interests = ["Cloud Architecture", "DevOps", "SRE"]
         self.adventures = {
             "countries": "10 ✈️",
