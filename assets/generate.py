@@ -176,6 +176,28 @@ def icon(kind, cx, cy, c):
     }[kind]
 
 
+def topology(t):
+    """Small cluster graph in the gap between the name and the toolbox, with packets hopping between nodes."""
+    nodes = dict(a=(432, 70), b=(478, 44), c=(512, 88), d=(462, 122), e=(556, 54), f=(560, 124))
+    edges = ["ab", "bc", "ac", "cd", "ad", "be", "ce", "cf", "df", "ef"]
+    out = ['<g opacity=".75">']
+    for u, v in edges:
+        (x1, y1), (x2, y2) = nodes[u], nodes[v]
+        out.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{t["border"]}" stroke-dasharray="2 4"/>')
+    rnd = random.Random(11)
+    for i, (u, v) in enumerate(edges):
+        (x1, y1), (x2, y2) = nodes[u], nodes[v]
+        if rnd.random() < .5:
+            x1, y1, x2, y2 = x2, y2, x1, y1
+        dur, col = rnd.uniform(1.8, 3.2), (t["green"] if i % 3 == 0 else t["accent"])
+        out.append(f'<circle r="2" fill="{col}" opacity="0"><animateMotion dur="{dur:.1f}s" begin="{i*.4:.1f}s" repeatCount="indefinite" path="M{x1} {y1} L{x2} {y2}"/>'
+                   f'<animate attributeName="opacity" values="0;1;1;0" dur="{dur:.1f}s" begin="{i*.4:.1f}s" repeatCount="indefinite"/></circle>')
+    for i, (x, y) in enumerate(nodes.values()):
+        out.append(f'<circle class="breathe" style="animation-delay:{i*.7:.1f}s" cx="{x}" cy="{y}" r="4" fill="{t["card"]}" stroke="{t["accent"]}" stroke-width="1.4"/>')
+    out.append('</g>')
+    return "".join(out)
+
+
 # ── sections: each returns (svg, height, extra css) in its own local coordinates ──
 def header(t, theme):
     out = [
@@ -185,25 +207,9 @@ def header(t, theme):
         mono(48, 139, TAGLINE, t, 12.5, cls="mono rise d3"),
         f'<g class="rise d3">{pill(W-40-78, 22, 78, "online", t, t["green"])}</g>',
     ]
-    # toolbox cluster: logos are the nodes, packets hop along the wires between them
+    out.append(topology(t))
     size, step, row_y = 36, 46, (62, 110)
     x0 = W - 40 - 5 * step - size
-    pos = {(r, c): (x0 + c * step + size / 2, row_y[r] + size / 2) for r in range(2) for c in range(6)}
-    wires = ([((r, c), (r, c + 1)) for r in range(2) for c in range(5)]
-             + [((0, c), (1, c)) for c in (0, 2, 3, 5)] + [((0, 1), (1, 2)), ((0, 4), (1, 3))])
-    rnd = random.Random(11)
-    out.append('<g opacity=".7">')
-    for a, b in wires:
-        (x1, y1), (x2, y2) = pos[a], pos[b]
-        out.append(f'<line x1="{x1:.0f}" y1="{y1:.0f}" x2="{x2:.0f}" y2="{y2:.0f}" stroke="{t["border"]}" stroke-dasharray="2 4"/>')
-    for i, (a, b) in enumerate(rnd.sample(wires, 9)):
-        (x1, y1), (x2, y2) = pos[a], pos[b]
-        if rnd.random() < .5:
-            x1, y1, x2, y2 = x2, y2, x1, y1
-        dur, col = rnd.uniform(1.8, 3.2), (t["green"] if i % 3 == 0 else t["accent"])
-        out.append(f'<circle r="2" fill="{col}" opacity="0"><animateMotion dur="{dur:.1f}s" begin="{i*.4:.1f}s" repeatCount="indefinite" path="M{x1:.0f} {y1:.0f} L{x2:.0f} {y2:.0f}"/>'
-                   f'<animate attributeName="opacity" values="0;1;1;0" dur="{dur:.1f}s" begin="{i*.4:.1f}s" repeatCount="indefinite"/></circle>')
-    out.append('</g>')
     k = 0
     for r, names in enumerate(TOOLBOX):
         for c, name in enumerate(names):
