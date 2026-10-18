@@ -164,6 +164,8 @@
 </svg>
 </g>
   <text x="252.8" y="172" class="mono rise" style="animation-delay:0.70s" font-size="12" fill="#656d76">@vishesh-gupta</text>
+  <g class="rise" style="animation-delay:0.80s"><svg x="381.0" y="156" width="22" height="22" viewBox="0 0 256 256" fill="none"><rect width="256" height="256" rx="60" fill="#242938"/><g stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"><circle cx="128" cy="128" r="76"/><path d="M52 128h152"/><path d="M128 52c22 22 32 48 32 76s-10 54-32 76c-22-22-32-48-32-76s10-54 32-76z"/></g></svg></g>
+  <text x="412.0" y="172" class="mono rise" style="animation-delay:0.80s" font-size="12" fill="#656d76">visheshgupta.me</text>
   <rect x="1" y="184" width="898" height="48" fill="url(#trace)" mask="url(#beat)"/>
   </g>
 <g transform="translate(0 246)">
