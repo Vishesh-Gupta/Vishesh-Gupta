@@ -164,8 +164,6 @@
 </svg>
 </g>
   <text x="252.8" y="172" class="mono rise" style="animation-delay:0.70s" font-size="12" fill="#656d76">@vishesh-gupta</text>
-  <g class="rise" style="animation-delay:0.80s"><svg x="381.0" y="156" width="22" height="22" viewBox="0 0 256 256" fill="none"><rect width="256" height="256" rx="60" fill="#0078D4"/><rect x="48" y="72" width="160" height="112" rx="16" stroke="#fff" stroke-width="16"/><path d="M56 84l72 56 72-56" stroke="#fff" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/></svg></g>
-  <text x="412.0" y="172" class="mono rise" style="animation-delay:0.80s" font-size="12" fill="#656d76">hello@example.com</text>
   <rect x="1" y="184" width="898" height="48" fill="url(#trace)" mask="url(#beat)"/>
   </g>
 <g transform="translate(0 246)">

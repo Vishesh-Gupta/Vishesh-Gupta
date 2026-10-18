@@ -29,7 +29,6 @@ TAGLINE = "cloud architecture · devops · site reliability"
 CONNECT = [
     ("linkedin", "in/vishesh-gupta"),
     ("github", "@vishesh-gupta"),
-    ("email", "hello@example.com"),
 ]
 
 TOOLBOX = [  # two rows of logos in the header, wired together as a little cluster
