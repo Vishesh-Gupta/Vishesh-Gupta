@@ -29,6 +29,7 @@ TAGLINE = "cloud architecture · devops · site reliability"
 CONNECT = [
     ("linkedin", "in/vishesh-gupta"),
     ("github", "@vishesh-gupta"),
+    ("web", "visheshgupta.me"),
 ]
 
 TOOLBOX = [  # two rows of logos in the header, wired together as a little cluster
@@ -92,6 +93,12 @@ EMAIL_ICON = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fil
               '<rect width="256" height="256" rx="60" fill="#0078D4"/>'
               '<rect x="48" y="72" width="160" height="112" rx="16" stroke="#fff" stroke-width="16"/>'
               '<path d="M56 84l72 56 72-56" stroke="#fff" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/></svg>')
+WEB_ICON = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">'
+            '<rect width="256" height="256" rx="60" fill="#242938"/>'
+            '<g stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">'
+            '<circle cx="128" cy="128" r="76"/><path d="M52 128h152"/>'
+            '<path d="M128 52c22 22 32 48 32 76s-10 54-32 76c-22-22-32-48-32-76s10-54 32-76z"/></g></svg>')
+INLINE_ICONS = {"email": EMAIL_ICON, "web": WEB_ICON}
 
 _uid = 0
 
@@ -100,7 +107,7 @@ def logo(name, theme, x, y, size, cls="", style=""):
     """Inline a 256x256 icon as a nested <svg>, prefixing ids so gradients don't collide."""
     global _uid
     _uid += 1
-    src = EMAIL_ICON if name == "email" else open(os.path.join(ICONS, f"{name}-{theme}.svg")).read()
+    src = INLINE_ICONS.get(name) or open(os.path.join(ICONS, f"{name}-{theme}.svg")).read()
     p = f"i{_uid}_"
     src = re.sub(r'id="([^"]+)"', rf'id="{p}\1"', src)
     src = re.sub(r'url\(#([^)]+)\)', rf'url(#{p}\1)', src)
