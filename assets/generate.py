@@ -37,6 +37,10 @@ TOOLBOX = [  # two rows of logos in the header, wired together as a little clust
     ["python", "go", "bash", "prometheus", "grafana", "githubactions"],
 ]
 
+TOOL_NAMES = {  # spoken names for the screen-reader description
+    "aws": "AWS", "gcp": "Google Cloud", "githubactions": "GitHub Actions",
+}
+
 ROWS = [  # (component, uptime)
     ("Cloud Architecture", "99.99%"),
     ("DevOps &amp; SRE", "99.98%"),
@@ -94,11 +98,13 @@ EMAIL_ICON = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fil
               '<rect x="48" y="72" width="160" height="112" rx="16" stroke="#fff" stroke-width="16"/>'
               '<path d="M56 84l72 56 72-56" stroke="#fff" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/></svg>')
 WEB_ICON = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">'
-            '<rect width="256" height="256" rx="60" fill="#242938"/>'
-            '<g stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">'
+            '<rect width="256" height="256" rx="60" fill="{bg}"/>'
+            '<g stroke="{fg}" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">'
             '<circle cx="128" cy="128" r="76"/><path d="M52 128h152"/>'
             '<path d="M128 52c22 22 32 48 32 76s-10 54-32 76c-22-22-32-48-32-76s10-54 32-76z"/></g></svg>')
-INLINE_ICONS = {"email": EMAIL_ICON, "web": WEB_ICON}
+# tile colors match the skillicons dark/light tiles
+TILE_COLORS = {"dark": dict(bg="#242938", fg="#fff"), "light": dict(bg="#F4F2ED", fg="#242938")}
+INLINE_ICONS = {"email": lambda theme: EMAIL_ICON, "web": lambda theme: WEB_ICON.format(**TILE_COLORS[theme])}
 
 _uid = 0
 
@@ -107,7 +113,8 @@ def logo(name, theme, x, y, size, cls="", style=""):
     """Inline a 256x256 icon as a nested <svg>, prefixing ids so gradients don't collide."""
     global _uid
     _uid += 1
-    src = INLINE_ICONS.get(name) or open(os.path.join(ICONS, f"{name}-{theme}.svg")).read()
+    inline = INLINE_ICONS.get(name)
+    src = inline(theme) if inline else open(os.path.join(ICONS, f"{name}-{theme}.svg")).read()
     p = f"i{_uid}_"
     src = re.sub(r'id="([^"]+)"', rf'id="{p}\1"', src)
     src = re.sub(r'url\(#([^)]+)\)', rf'url(#{p}\1)', src)
@@ -235,7 +242,7 @@ def header(t, theme):
 
 
 def status_and_slos(t):
-    top, rowh, bars_x, n, bw, gap = 38, 28, 236, 38, 4, 3.4
+    top, rowh, bars_x, n, bw, gap = 38, 28, 236, 36, 4, 3.4
     split = 596
     out = [
         ping_dot(46, 14, 4.5, t["green"]),
@@ -397,19 +404,19 @@ def offcall(t):
     return "\n  ".join(out), ty + th, ""
 
 
-def ticker(t):
+def ticker(t, m=40, size=11, char=6.6):
     """Log lines drifting right to left; positions are explicit so the loop is seamless."""
     colors = dict(OK=t["green"], INFO=t["accent"], WARN=t["amber"])
     items, x = [], 0
     for level, msg in LOGS:
         items.append((x, level, msg))
-        x += (len(level) + len(msg) + 3) * 6.6 + 44
+        x += (len(level) + len(msg) + 3) * char + 44
     period, h = x, 30
-    out = [f'<rect x="40" y="0" width="{W-80}" height="{h}" rx="9" fill="{t["tile"]}" stroke="{t["faint"]}"/>',
+    out = [f'<rect x="{m}" y="0" width="{W-2*m}" height="{h}" rx="9" fill="{t["tile"]}" stroke="{t["faint"]}"/>',
            '<g mask="url(#tickerfade)"><g class="ticker">']
     for r in range(3):
         for ix, level, msg in items:
-            out.append(f'<text x="{56 + ix + r*period:.1f}" y="19.5" class="mono" font-size="11" fill="{t["muted"]}">'
+            out.append(f'<text x="{m + 16 + ix + r*period:.1f}" y="19.5" class="mono" font-size="{size}" fill="{t["muted"]}">'
                        f'<tspan fill="{colors[level]}">[{level}]</tspan> {msg}</text>')
     out.append('</g></g>')
     css = (f".ticker {{ animation: ticker {period/22:.1f}s linear infinite; }}\n"
@@ -417,27 +424,207 @@ def ticker(t):
     return "\n  ".join(out), h, css
 
 
+# ── phone layout: one column, larger type, so it stays readable at ~360px ────
+MW, MM = 400, 24  # phone card width and side margin
+
+
+def m_header(t, theme):
+    out = [
+        mono(MM, 40, f'~ $ {typed("whoami", .25)}<tspan class="cursor" fill="{t["accent"]}"> ▍</tspan>', t, 14),
+        f'<g class="rise d3">{pill(MW - MM - 78, 20, 78, "online", t, t["green"])}</g>',
+        f'<text x="{MM - 2}" y="84" class="sans rise d1" font-size="36" font-weight="700" fill="{t["fg"]}" letter-spacing="-1">{NAME}</text>',
+        f'<text x="{MM}" y="112" class="sans rise d2" font-size="16" fill="{t["accent"]}" font-weight="600">{ROLE}</text>',
+        mono(MM, 136, TAGLINE, t, 12, cls="mono rise d3"),
+    ]
+    size, step = 44, 54
+    x0 = (MW - (5 * step + size)) / 2
+    k = 0
+    for r, names in enumerate(TOOLBOX):
+        for c, name in enumerate(names):
+            out.append(f'<g class="float" style="animation-delay:{-k*.37:.2f}s">'
+                       + logo(name, theme, round(x0 + c * step), 156 + r * 54, size, "pop", f"animation-delay:{.9 + k*.05:.2f}s") + '</g>')
+            k += 1
+    # connect: two columns, wrapping onto a second line
+    colw = (MW - 2 * MM) / 2
+    for i, (name, handle) in enumerate(CONNECT):
+        x, y = MM + (i % 2) * colw, 280 + (i // 2) * 30
+        d = f"animation-delay:{.6 + i*.1:.2f}s"
+        out.append(logo(name, theme, round(x), y, 22, "rise", d))
+        out.append(f'<text x="{x + 30:.0f}" y="{y + 16}" class="mono rise" style="{d}" font-size="12.5" fill="{t["muted"]}">{handle}</text>')
+    top = 280 + 30 * ((len(CONNECT) + 1) // 2)
+    out.append(f'<rect x="1" y="{top}" width="{MW-2}" height="48" fill="url(#trace)" mask="url(#beat)"/>')
+    return "\n  ".join(out), top + 48, ""
+
+
+def m_status(t):
+    top, rowh, n = 40, 40, 44
+    gap = 2
+    bw = (MW - 2 * MM - (n - 1) * gap) / n
+    out = [ping_dot(MM + 6, 16, 4.5, t["green"]),
+           f'<text x="{MM + 20}" y="21" class="sans" font-size="16" font-weight="600" fill="{t["fg"]}">All systems operational</text>']
+    for i, (label, metric) in enumerate(ROWS):
+        y = top + i * rowh
+        rnd = random.Random(i * 31 + 3)
+        out.append(f'<text x="{MM}" y="{y+14}" class="sans" font-size="13.5" font-weight="600" fill="{t["fg"]}">{label}</text>')
+        out.append(mono(MW - MM, y + 14, metric, t, 12.5, t["green"], "end"))
+        for b in range(n):
+            c = t["amber"] if rnd.random() < .03 else t["green"]
+            out.append(f'<rect class="bar" style="animation-delay:{.8 + b*.012 + i*.05:.3f}s" x="{MM + b*(bw+gap):.1f}" y="{y+21}" width="{bw:.1f}" height="9" rx="1" fill="{c}"/>')
+    return "\n  ".join(out), top + rowh * len(ROWS) - 6, ""
+
+
+def m_slos(t):
+    out = [mono(MM, 16, "$ slo report --30d", t, 12.5)]
+    cw, ch, r = (MW - 2 * MM) / 2, 92, 21
+    for i, (title, pct, col) in enumerate(SLOS):
+        cx, cy = MM + (i % 2) * cw + cw / 2, 30 + (i // 2) * ch + 30
+        c, begin = t[col], 1.4 + i * .15
+        anim = (f'<animate attributeName="stroke-dasharray" from="0 100" to="{pct} 100" dur="1.6s" begin="{begin:.2f}s" fill="freeze" '
+                f'calcMode="spline" keyTimes="0;1" keySplines=".2 .8 .2 1"/>')
+        if pct < 25:
+            anim += (f'<animate attributeName="stroke-dasharray" values="{pct} 100;{pct/3:.0f} 100;{pct} 100" dur="9s" '
+                     f'begin="{begin + 1.6:.2f}s" repeatCount="indefinite"/>')
+        out.append(
+            f'<g class="rise" style="animation-delay:{begin:.2f}s">'
+            f'<circle class="spin" cx="{cx}" cy="{cy}" r="{r + 6}" fill="none" stroke="{t["border"]}" stroke-dasharray="1 4"/>'
+            f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{t["faint"]}" stroke-width="5"/>'
+            f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{c}" stroke-width="5" stroke-linecap="round" pathLength="100" '
+            f'stroke-dasharray="0 100" transform="rotate(-90 {cx} {cy})">{anim}</circle>'
+            f'<text x="{cx}" y="{cy + 4}" text-anchor="middle" class="mono" font-size="11" font-weight="700" fill="{t["fg"]}">{pct}%</text>'
+            f'<text x="{cx}" y="{cy + r + 24}" text-anchor="middle" class="sans" font-size="13" font-weight="600" fill="{t["fg"]}">{title}</text></g>')
+    return "\n  ".join(out), 30 + 2 * ch - 4, ""
+
+
+def m_career(t):
+    py, step = 26, 38
+    ph = 20 + step * len(CAREER)
+    out = [mono(MM, 14, "$ git log --oneline career", t, 12.5),
+           f'<rect x="{MM}" y="{py}" width="{MW - 2*MM}" height="{ph}" rx="10" fill="{t["tile"]}" stroke="{t["faint"]}"/>']
+    gx, y0 = MM + 20, py + 26
+    ys = [y0 + k * step for k in range(len(CAREER))]
+    committed = [i for i, c in enumerate(CAREER) if c[0]]
+    head_y = ys[committed[0]]
+    out.append(f'<line x1="{gx}" x2="{gx}" y1="{head_y - 4}" y2="{ys[committed[-1]] - 4}" stroke="{t["border"]}" stroke-width="2"/>')
+    for i, (sha, refs, msg) in enumerate(CAREER):
+        y, d = ys[i], f"animation-delay:{2.0 + i*.15:.2f}s"
+        if sha is None:
+            out.append(f'<line class="flow" x1="{gx}" x2="{gx}" y1="{y - 4}" y2="{head_y - 4}" stroke="{t["accent"]}" stroke-width="2" stroke-dasharray="3 4"/>')
+            out.append(f'<g class="rise" style="{d}"><circle class="breathe" cx="{gx}" cy="{y-4}" r="4" fill="{t["tile"]}" stroke="{t["accent"]}" stroke-width="1.6" stroke-dasharray="2 2"/>'
+                       f'<text x="{gx + 16}" y="{y}" class="mono" font-size="11.5" fill="{t["accent"]}">({refs})</text>'
+                       f'<text x="{gx + 16}" y="{y + 16}" class="sans" font-size="13" font-style="italic" fill="{t["muted"]}">{msg}<tspan class="cursor" fill="{t["accent"]}"> ▍</tspan></text></g>')
+            continue
+        dot = ping_dot(gx, y - 4, 4, t["accent"]) if i == committed[0] else f'<circle cx="{gx}" cy="{y-4}" r="3.6" fill="{t["tile"]}" stroke="{t["muted"]}" stroke-width="1.6"/>'
+        ref = f' <tspan fill="{t["accent"]}">({refs})</tspan>' if refs else ""
+        out.append(f'<g class="rise" style="{d}">{dot}'
+                   f'<text x="{gx + 16}" y="{y}" class="mono" font-size="11.5" fill="{t["amber"]}">{sha}{ref}</text>'
+                   f'<text x="{gx + 16}" y="{y + 16}" class="sans" font-size="13" fill="{t["fg"]}">{msg.replace("feat: ", "")}</text></g>')
+    return "\n  ".join(out), py + ph, ""
+
+
+def m_pods(t):
+    py, step = 26, 20
+    ph = 34 + step * len(PODS)
+    out = [mono(MM, 14, "$ kubectl get pods -n life", t, 12.5),
+           f'<rect x="{MM}" y="{py}" width="{MW - 2*MM}" height="{ph}" rx="10" fill="{t["tile"]}" stroke="{t["faint"]}"/>']
+    cols = [MM + 16, MM + 176, MW - MM - 16]
+    hy = py + 22
+    for x, h, anchor in zip(cols, ("NAME", "STATUS", "RESTARTS"), ("start", "start", "end")):
+        out.append(mono(x, hy, h, t, 11, anchor=anchor))
+    for i, (name, _ready, st, restarts) in enumerate(PODS):
+        y, d = hy + 21 + i * step, f"animation-delay:{2.2 + i*.18:.2f}s"
+        if st is None:
+            cells = "".join(f'<text class="cycle c{k}" x="{cols[1]}" y="{y}" font-size="12" fill="{c}">{label}</text>'
+                            for k, (label, c) in enumerate((("ContainerCreating", t["amber"]), ("Running", t["green"]), ("CrashLoopBackOff", t["red"]))))
+        else:
+            cells = f'<text x="{cols[1]}" y="{y}" font-size="12" fill="{t["green"]}">{st}</text>'
+        out.append(f'<g class="rise mono" style="{d}">'
+                   f'<text x="{cols[0]}" y="{y}" font-size="12" fill="{t["fg"]}">{name}</text>{cells}'
+                   f'<text x="{cols[2]}" y="{y}" text-anchor="end" font-size="12" fill="{t["muted"]}">{restarts}</text></g>')
+    return "\n  ".join(out), py + ph, ""
+
+
+def m_offcall(t):
+    p0, p1, p2, p3 = (MM + 6, 54), (120, 22), (280, 22), (MW - MM - 6, 54)
+    arc = f"M{p0[0]} {p0[1]} C {p1[0]} {p1[1]}, {p2[0]} {p2[1]}, {p3[0]} {p3[1]}"
+    out = [mono(MM, 14, "$ systemctl status life", t, 12.5)]
+    rnd = random.Random(5)
+    for _ in range(12):
+        out.append(f'<circle class="twinkle" style="animation-delay:{rnd.uniform(0, 6):.1f}s;animation-duration:{rnd.uniform(3, 6):.1f}s" '
+                   f'cx="{rnd.uniform(MM, MW - MM):.0f}" cy="{rnd.uniform(22, 62):.0f}" r="{rnd.uniform(.7, 1.3):.1f}" fill="{t["muted"]}"/>')
+    out.append(f'<path d="{arc}" fill="none" stroke="{t["border"]}" stroke-width="1.4" stroke-dasharray="2 6" stroke-linecap="round"/>')
+    for i in range(10):
+        u = (i + .5) / 10
+        x, y = ((1-u)**3*a + 3*(1-u)**2*u*b + 3*(1-u)*u**2*c + u**3*d for a, b, c, d in zip(p0, p1, p2, p3))
+        out.append(f'<circle class="stamp" style="animation-delay:{9*u:.2f}s" cx="{x:.1f}" cy="{y:.1f}" r="3.4" fill="{t["card"]}" stroke="{t["accent"]}" stroke-width="1.4"/>')
+    out.append(f'<g><path d="M-8 0 L8 0 M2 -6 L5.5 0 L2 6 M-6 -2.6 L-4.5 0 L-6 2.6" fill="none" stroke="{t["fg"]}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>'
+               f'<animateMotion dur="9s" repeatCount="indefinite" rotate="auto" path="{arc}"/></g>')
+    tg, th, ty = 12, 64, 72
+    tw = (MW - 2 * MM - tg) / 2
+    for i, (ic, col, frames, label) in enumerate(TILES):
+        x, y, c = MM + (i % 2) * (tw + tg), ty + (i // 2) * (th + tg), t[col]
+        extra = ""
+        if ic == "play":
+            extra = (f'<rect x="{x+50:.1f}" y="{y+th-10}" width="{tw-66:.1f}" height="2.5" rx="1.2" fill="{t["faint"]}"/>'
+                     f'<rect class="progress" x="{x+50:.1f}" y="{y+th-10}" width="{tw-66:.1f}" height="2.5" rx="1.2" fill="{c}"/>')
+        out.append(f'<g class="rise" style="animation-delay:{1.8 + i*.12:.2f}s">'
+                   f'<rect x="{x:.1f}" y="{y}" width="{tw:.1f}" height="{th}" rx="10" fill="{t["tile"]}" stroke="{t["faint"]}"/>'
+                   f'{icon(ic, round(x + 26), y + th // 2, c)}'
+                   f'{countup(frames, round(x + 50), y + 30, 1.9 + i*.12, t, 21)}'
+                   f'<text x="{x+50:.1f}" y="{y+46}" class="sans" font-size="11" font-weight="600" fill="{c}">{label}</text>{extra}</g>')
+    return "\n  ".join(out), ty + 2 * th + tg, ""
+
+
 # ── assembly ──────────────────────────────────────────────────────────────────
 def aurora(t, H):
-    """Soft blurred color fields drifting slowly behind everything."""
-    blobs = [(180, 80, 150, t["accent"], 0), (760, 190, 130, t["green"], 1),
-             (640, H * .52, 160, t["purple"], 2), (200, H - 150, 150, t["pink"], 3)]
-    return "".join(
-        f'<circle class="drift a{k % 3}" style="animation-delay:-{k*5}s" cx="{x}" cy="{y:.0f}" r="{r}" fill="{c}" opacity="{t["aurora"]}" filter="url(#blur)"/>'
-        for x, y, r, c, k in blobs)
+    """Soft color fields drifting slowly behind everything.
+
+    Radial gradients rather than a blur filter: the card repaints as one image on every
+    animation frame, and a large gaussian blur is the most expensive thing to repaint.
+    """
+    k = W / 900
+    blobs = [(180 * k, 80, 150, t["accent"], 0), (760 * k, 190, 130, t["green"], 1),
+             (640 * k, H * .52, 160, t["purple"], 2), (200 * k, H - 150, 150, t["pink"], 3)]
+    op = float(t["aurora"])
+    out = []
+    for x, y, r, c, k in blobs:
+        out.append(f'<radialGradient id="glow{k}"><stop offset="0" stop-color="{c}" stop-opacity="{op}"/>'
+                   f'<stop offset=".45" stop-color="{c}" stop-opacity="{op * .75:.3f}"/>'
+                   f'<stop offset="1" stop-color="{c}" stop-opacity="0"/></radialGradient>'
+                   f'<circle class="drift a{k % 3}" style="animation-delay:-{k*5}s" cx="{x:.0f}" cy="{y:.0f}" r="{r + 120}" fill="url(#glow{k})"/>')
+    return "".join(out)
 
 
-def profile(theme):
-    t = THEMES[theme]
-    P = 300
-    sections = (  # (builder, gap after, divider in the gap)
+def layouts(t, theme):
+    """(width, side margin, heartbeat band top, sections) for each card variant.
+
+    Sections are (builder, gap after, divider in the gap).
+    """
+    desktop = (900, 40, 184, (
         (lambda: header(t, theme), 14, False),
         (lambda: status_and_slos(t), 18, True),
         (lambda: pipeline(t), 18, True),
         (lambda: journey(t), 18, True),
         (lambda: offcall(t), 16, False),
         (lambda: ticker(t), 18, False),
-    )
+    ))
+    beat = 280 + 30 * ((len(CONNECT) + 1) // 2)
+    mobile = (MW, MM, beat, (
+        (lambda: m_header(t, theme), 12, False),
+        (lambda: m_status(t), 22, True),
+        (lambda: m_slos(t), 20, True),
+        (lambda: m_career(t), 20, False),
+        (lambda: m_pods(t), 22, True),
+        (lambda: m_offcall(t), 18, False),
+        (lambda: ticker(t, MM, 12, 7.2), 20, False),
+    ))
+    return {"": desktop, "mobile-": mobile}
+
+
+def profile(theme, layout):
+    global W
+    t = THEMES[theme]
+    P = 300
+    W, M, beat_y, sections = layout
     parts, css, y = [], [], 0
     for build, gap, rule in sections:
         body, h, extra = build()
@@ -446,9 +633,9 @@ def profile(theme):
             css.append(extra)
         y += h + gap
         if rule:
-            parts.append(f'<line x1="40" x2="{W-40}" y1="{y - gap / 2}" y2="{y - gap / 2}" stroke="{t["faint"]}"/>')
+            parts.append(f'<line x1="{M}" x2="{W-M}" y1="{y - gap / 2}" y2="{y - gap / 2}" stroke="{t["faint"]}"/>')
     H = y
-    tools = ", ".join(n for row in TOOLBOX for n in row)
+    tools = ", ".join(TOOL_NAMES.get(n, n.title()) for row in TOOLBOX for n in row)
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="{NAME}, {ROLE}. Toolbox: {tools}. All systems operational. SLOs: 97% error budget left, 90% toil automated, 100% actionable alerts, 12% coffee. Career: Staff Software Engineer at Alpaca, previously Infrastructure Engineer at Monoceros. Off-call: 10 countries, 9000+ anime episodes, world #43 dining, fashion and style.">
   <defs>
     <linearGradient id="trace" x1="0" x2="{W}" gradientUnits="userSpaceOnUse">
@@ -469,15 +656,14 @@ def profile(theme):
     <linearGradient id="edgefade" x1="0" x2="1">
       <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".06" stop-color="#fff"/><stop offset=".94" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
     </linearGradient>
-    <mask id="gridfade"><rect width="{W}" height="250" fill="url(#fade)"/></mask>
-    <mask id="tickerfade" maskUnits="userSpaceOnUse" x="40" y="0" width="{W-80}" height="30"><rect x="40" y="0" width="{W-80}" height="30" fill="url(#edgefade)"/></mask>
+    <mask id="gridfade"><rect width="{W}" height="{beat_y + 66}" fill="url(#fade)"/></mask>
+    <mask id="tickerfade" maskUnits="userSpaceOnUse" x="{M}" y="0" width="{W-2*M}" height="30"><rect x="{M}" y="0" width="{W-2*M}" height="30" fill="url(#edgefade)"/></mask>
     <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
       <path d="M24 0H0V24" fill="none" stroke="{t['grid']}"/>
     </pattern>
-    <mask id="beat" maskUnits="userSpaceOnUse" x="0" y="184" width="{W}" height="48">
-      <g class="scroll"><path d="{heartbeat(212, P)}" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></g>
+    <mask id="beat" maskUnits="userSpaceOnUse" x="0" y="{beat_y}" width="{W}" height="48">
+      <g class="scroll"><path d="{heartbeat(beat_y + 28, P)}" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></g>
     </mask>
-    <filter id="blur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="60"/></filter>
     <clipPath id="clip"><rect x="1" y="1" width="{W-2}" height="{H-2}" rx="16"/></clipPath>
     <style>
       .sans {{ font-family: {SANS}; }}
@@ -526,14 +712,15 @@ def profile(theme):
     </style>
   </defs>
   <rect x="1" y="1" width="{W-2}" height="{H-2}" rx="16" fill="{t['card']}" stroke="{t['border']}"/>
-  <g clip-path="url(#clip)">{aurora(t, H)}<rect width="{W}" height="250" fill="url(#grid)" mask="url(#gridfade)"/></g>
+  <g clip-path="url(#clip)">{aurora(t, H)}<rect width="{W}" height="{beat_y + 66}" fill="url(#grid)" mask="url(#gridfade)"/></g>
   {chr(10).join(parts)}
 </svg>
 '''
 
 
 for theme in THEMES:
-    _uid = 0
-    with open(os.path.join(OUT, f"profile-{theme}.svg"), "w") as f:
-        f.write(profile(theme))
+    for prefix, layout in layouts(THEMES[theme], theme).items():
+        _uid = 0
+        with open(os.path.join(OUT, f"profile-{prefix}{theme}.svg"), "w") as f:
+            f.write(profile(theme, layout))
 print("ok")
