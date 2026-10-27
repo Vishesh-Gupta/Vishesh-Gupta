@@ -37,6 +37,10 @@ TOOLBOX = [  # two rows of logos in the header, wired together as a little clust
     ["python", "go", "bash", "prometheus", "grafana", "githubactions"],
 ]
 
+TOOL_NAMES = {  # spoken names for the screen-reader description
+    "aws": "AWS", "gcp": "Google Cloud", "githubactions": "GitHub Actions",
+}
+
 ROWS = [  # (component, uptime)
     ("Cloud Architecture", "99.99%"),
     ("DevOps &amp; SRE", "99.98%"),
@@ -94,11 +98,13 @@ EMAIL_ICON = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fil
               '<rect x="48" y="72" width="160" height="112" rx="16" stroke="#fff" stroke-width="16"/>'
               '<path d="M56 84l72 56 72-56" stroke="#fff" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/></svg>')
 WEB_ICON = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">'
-            '<rect width="256" height="256" rx="60" fill="#242938"/>'
-            '<g stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">'
+            '<rect width="256" height="256" rx="60" fill="{bg}"/>'
+            '<g stroke="{fg}" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">'
             '<circle cx="128" cy="128" r="76"/><path d="M52 128h152"/>'
             '<path d="M128 52c22 22 32 48 32 76s-10 54-32 76c-22-22-32-48-32-76s10-54 32-76z"/></g></svg>')
-INLINE_ICONS = {"email": EMAIL_ICON, "web": WEB_ICON}
+# tile colors match the skillicons dark/light tiles
+TILE_COLORS = {"dark": dict(bg="#242938", fg="#fff"), "light": dict(bg="#F4F2ED", fg="#242938")}
+INLINE_ICONS = {"email": lambda theme: EMAIL_ICON, "web": lambda theme: WEB_ICON.format(**TILE_COLORS[theme])}
 
 _uid = 0
 
@@ -107,7 +113,8 @@ def logo(name, theme, x, y, size, cls="", style=""):
     """Inline a 256x256 icon as a nested <svg>, prefixing ids so gradients don't collide."""
     global _uid
     _uid += 1
-    src = INLINE_ICONS.get(name) or open(os.path.join(ICONS, f"{name}-{theme}.svg")).read()
+    inline = INLINE_ICONS.get(name)
+    src = inline(theme) if inline else open(os.path.join(ICONS, f"{name}-{theme}.svg")).read()
     p = f"i{_uid}_"
     src = re.sub(r'id="([^"]+)"', rf'id="{p}\1"', src)
     src = re.sub(r'url\(#([^)]+)\)', rf'url(#{p}\1)', src)
@@ -235,7 +242,7 @@ def header(t, theme):
 
 
 def status_and_slos(t):
-    top, rowh, bars_x, n, bw, gap = 38, 28, 236, 38, 4, 3.4
+    top, rowh, bars_x, n, bw, gap = 38, 28, 236, 36, 4, 3.4
     split = 596
     out = [
         ping_dot(46, 14, 4.5, t["green"]),
@@ -419,12 +426,21 @@ def ticker(t):
 
 # ── assembly ──────────────────────────────────────────────────────────────────
 def aurora(t, H):
-    """Soft blurred color fields drifting slowly behind everything."""
+    """Soft color fields drifting slowly behind everything.
+
+    Radial gradients rather than a blur filter: the card repaints as one image on every
+    animation frame, and a large gaussian blur is the most expensive thing to repaint.
+    """
     blobs = [(180, 80, 150, t["accent"], 0), (760, 190, 130, t["green"], 1),
              (640, H * .52, 160, t["purple"], 2), (200, H - 150, 150, t["pink"], 3)]
-    return "".join(
-        f'<circle class="drift a{k % 3}" style="animation-delay:-{k*5}s" cx="{x}" cy="{y:.0f}" r="{r}" fill="{c}" opacity="{t["aurora"]}" filter="url(#blur)"/>'
-        for x, y, r, c, k in blobs)
+    op = float(t["aurora"])
+    out = []
+    for x, y, r, c, k in blobs:
+        out.append(f'<radialGradient id="glow{k}"><stop offset="0" stop-color="{c}" stop-opacity="{op}"/>'
+                   f'<stop offset=".45" stop-color="{c}" stop-opacity="{op * .75:.3f}"/>'
+                   f'<stop offset="1" stop-color="{c}" stop-opacity="0"/></radialGradient>'
+                   f'<circle class="drift a{k % 3}" style="animation-delay:-{k*5}s" cx="{x}" cy="{y:.0f}" r="{r + 120}" fill="url(#glow{k})"/>')
+    return "".join(out)
 
 
 def profile(theme):
@@ -448,7 +464,7 @@ def profile(theme):
         if rule:
             parts.append(f'<line x1="40" x2="{W-40}" y1="{y - gap / 2}" y2="{y - gap / 2}" stroke="{t["faint"]}"/>')
     H = y
-    tools = ", ".join(n for row in TOOLBOX for n in row)
+    tools = ", ".join(TOOL_NAMES.get(n, n.title()) for row in TOOLBOX for n in row)
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="{NAME}, {ROLE}. Toolbox: {tools}. All systems operational. SLOs: 97% error budget left, 90% toil automated, 100% actionable alerts, 12% coffee. Career: Staff Software Engineer at Alpaca, previously Infrastructure Engineer at Monoceros. Off-call: 10 countries, 9000+ anime episodes, world #43 dining, fashion and style.">
   <defs>
     <linearGradient id="trace" x1="0" x2="{W}" gradientUnits="userSpaceOnUse">
@@ -477,7 +493,6 @@ def profile(theme):
     <mask id="beat" maskUnits="userSpaceOnUse" x="0" y="184" width="{W}" height="48">
       <g class="scroll"><path d="{heartbeat(212, P)}" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></g>
     </mask>
-    <filter id="blur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="60"/></filter>
     <clipPath id="clip"><rect x="1" y="1" width="{W-2}" height="{H-2}" rx="16"/></clipPath>
     <style>
       .sans {{ font-family: {SANS}; }}
